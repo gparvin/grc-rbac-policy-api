@@ -1,0 +1,139 @@
+consumes:
+    - application/io.open-cluster-management.rbac.access-list.v1+json
+info:
+    description: Query Kubernetes RBAC RoleBindings from the Policy Administration Point
+    title: MultiCluster Fine Grained RBAC
+    version: 1.0.0
+paths: {}
+produces:
+    - application/io.open-cluster-management.rbac.access-list.v1+json
+schemes:
+    - http
+swagger: "2.0"
+definitions:
+  item:
+    type: object
+    required:
+      - managedcluster
+      - user
+    properties:
+      role:
+        type: string
+      user:
+        type: string
+        minLength: 1
+      managedcluster:
+        type: string
+        minLength: 1
+      namespace:
+        type: string
+        minLength: 1
+  acl:
+    type: object
+    required:
+      - name
+      - namespace
+      - acl
+    properties:
+      acl:
+        type: array
+        items:
+          $ref: "#/definitions/item"
+      name:
+        type: string
+        minLength: 1
+      namespace:
+        type: string
+        minLength: 1
+  resource:
+    type: object
+    required:
+      - name
+      - namespace
+    properties:
+      name:
+        type: string
+        minLength: 1
+      namespace:
+        type: string
+        minLength: 1
+  error:
+    type: object
+    required:
+      - message
+    properties:
+      code:
+        type: integer
+        format: int64
+      message:
+        type: string
+paths:
+  /access:
+    post:
+      tags:
+        - access
+      operationId: checkAccess
+      parameters:
+        - name: body
+          in: body
+          schema:
+            $ref: "#/definitions/item"
+      responses:
+        200:
+          description: list the fine grained RBAC access
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/item"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/error"
+    delete:
+      tags:
+        - access
+      operationId: deleteAccess
+      parameters:
+        - name: body
+          in: body
+          schema:
+            $ref: "#/definitions/resource"
+      responses:
+        200:
+          description: deleted the resources for a policy
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/error"
+  /rolebindings:
+    get:
+      tags:
+        - rolebindings
+      operationId: getRoleBindings
+      responses:
+        200:
+          description: retrieve the full cache of role bindings
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/acl"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/error"
+    post:
+      tags:
+        - rolebinding
+      operationId: addRoleBinding
+      parameters:
+        - name: body
+          in: body
+          schema:
+            $ref: "#/definitions/acl"
+      responses:
+        200:
+          description: the data was successfully added to the role bindings cache
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/error"
