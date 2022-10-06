@@ -1,0 +1,86 @@
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  name: policy-configure-appworkloads-rbac-prod
+  annotations:
+    policy.open-cluster-management.io/standards: NIST SP 800-53
+    policy.open-cluster-management.io/categories: AC Access Control
+    policy.open-cluster-management.io/controls: AC-3 Access Enforcement
+    policy.open-cluster-management.io/process-rbac: "true"
+spec:
+  remediationAction: inform
+  disabled: false
+  policy-templates:
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: policy-configure-appworkloads-rbac-prod
+        spec:
+          pruneObjectBehavior: DeleteAll
+          remediationAction: inform # the policy-template spec.remediationAction is overridden by the preceding parameter value for spec.remediationAction.
+          severity: high
+          object-templates:
+            - complianceType: musthave
+              objectDefinition:
+                apiVersion: v1
+                kind: Namespace
+                metadata:
+                  name: project-z
+                  labels:
+                    purpose: namespace-for-sample-AppZ-artifacts
+            - complianceType: musthave
+              objectDefinition:
+                kind: RoleBinding
+                apiVersion: rbac.authorization.k8s.io/v1
+                metadata:
+                  name: AppZ-Admin-Binding
+                  namespace: project-z
+                subjects:
+                  - kind: User
+                    apiGroup: rbac.authorization.k8s.io
+                    name: app-project-z-admin
+                roleRef:
+                  apiGroup: rbac.authorization.k8s.io
+                  kind: ClusterRole
+                  name: admin
+            - complianceType: musthave
+              objectDefinition:
+                kind: RoleBinding
+                apiVersion: rbac.authorization.k8s.io/v1
+                metadata:
+                  name: AppZ-View-Binding
+                  namespace: project-z
+                subjects:
+                  - kind: User
+                    apiGroup: rbac.authorization.k8s.io
+                    name: app-project-z-view
+                roleRef:
+                  apiGroup: rbac.authorization.k8s.io
+                  kind: ClusterRole
+                  name: view
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: PlacementBinding
+metadata:
+  name: binding-policy-configure-appworkloads-rbac-prod
+placementRef:
+  name: placement-policy-configure-appworkloads-rbac-prod
+  kind: PlacementRule
+  apiGroup: apps.open-cluster-management.io
+subjects:
+- name: policy-configure-appworkloads-rbac-prod
+  kind: Policy
+  apiGroup: policy.open-cluster-management.io
+---
+apiVersion: apps.open-cluster-management.io/v1
+kind: PlacementRule
+metadata:
+  name: placement-policy-configure-appworkloads-rbac-prod
+spec:
+  clusterConditions:
+  - status: "True"
+    type: ManagedClusterConditionAvailable
+  clusterSelector:
+    matchExpressions:
+      - {key: environment, operator: In, values: ["prod"]}
